@@ -1,5 +1,6 @@
 extends Node
-## Autoload "G": stato del gioco, dati, economia, salvataggio.
+## Autoload "G": stato del gioco, ciclo di Scadenze / Giorni stile CloverPit,
+## vetrinette Amuleti, Ticket dal surplus, Ruota del Destino, economia e salvataggio.
 
 signal toast(text: String, color: Color)
 signal story(title: String, body: String, button: String)
@@ -7,32 +8,34 @@ signal big_win(amount: float, label: String)
 signal achievement_unlocked(name: String)
 signal state_reset
 signal cat_reward(text: String)
+signal open_deadline_modal(won: bool, info: Dictionary)
+signal charm_triggered(id: String)
 
-const SAVE_VERSION := 1
+const SAVE_VERSION := 2
 var save_path := "user://save.json"
 
-# ------------------------------------------------------------------ DATI
+# ------------------------------------------------------------------ DATI ATTIVITÀ
 const BUSINESSES := [
 	{"name": "Edicola Gratta&Vinci", "desc": "I pensionati grattano, tu incassi.", "icon": "ticket", "color": Color("f2b632"),
-	 "cost": 4.0, "coef": 1.07, "rev": 1.0, "time": 0.8, "mgr": 1000.0},
+	 "cost": 4.0, "coef": 1.07, "rev": 1.5, "time": 0.6, "mgr": 250.0},
 	{"name": "Slot del Bar Sport", "desc": "Una macchinetta vicino al flipper.", "icon": "slot", "color": Color("d6344a"),
-	 "cost": 60.0, "coef": 1.15, "rev": 60.0, "time": 3.0, "mgr": 15000.0},
+	 "cost": 60.0, "coef": 1.15, "rev": 90.0, "time": 2.4, "mgr": 2500.0},
 	{"name": "Sala Bingo", "desc": "Nonne agguerrite, cartelle infinite.", "icon": "bingo", "color": Color("3a6fd8"),
-	 "cost": 720.0, "coef": 1.14, "rev": 540.0, "time": 6.0, "mgr": 100000.0},
+	 "cost": 720.0, "coef": 1.14, "rev": 800.0, "time": 4.5, "mgr": 25000.0},
 	{"name": "Agenzia Ippica", "desc": "Cavalli, fantini e soffiate.", "icon": "horse", "color": Color("8a5a3c"),
-	 "cost": 8640.0, "coef": 1.13, "rev": 4320.0, "time": 12.0, "mgr": 500000.0},
+	 "cost": 8640.0, "coef": 1.13, "rev": 6500.0, "time": 9.0, "mgr": 150000.0},
 	{"name": "Poker Clandestino", "desc": "Retrobottega, fumo e bluff.", "icon": "cards", "color": Color("2bb3a3"),
-	 "cost": 103680.0, "coef": 1.12, "rev": 51840.0, "time": 24.0, "mgr": 1.2e6},
+	 "cost": 103680.0, "coef": 1.12, "rev": 75000.0, "time": 18.0, "mgr": 800000.0},
 	{"name": "Roulette Truccata", "desc": "Il banco vince. Il banco sei tu.", "icon": "roulette", "color": Color("1b1420"),
-	 "cost": 1.24416e6, "coef": 1.11, "rev": 622080.0, "time": 96.0, "mgr": 1e7},
+	 "cost": 1.24416e6, "coef": 1.11, "rev": 900000.0, "time": 48.0, "mgr": 6e6},
 	{"name": "Lotteria Nazionale", "desc": "Un'intera nazione che sogna.", "icon": "lottery", "color": Color("ff6fae"),
-	 "cost": 1.492992e7, "coef": 1.10, "rev": 7.46496e6, "time": 384.0, "mgr": 1.11e8},
+	 "cost": 1.492992e7, "coef": 1.10, "rev": 1.1e7, "time": 144.0, "mgr": 6e7},
 	{"name": "Casinò Galleggiante", "desc": "In acque internazionali, niente tasse.", "icon": "ship", "color": Color("f07f2e"),
-	 "cost": 1.7915904e8, "coef": 1.09, "rev": 8.957952e7, "time": 1536.0, "mgr": 5.55e8},
+	 "cost": 1.7915904e8, "coef": 1.09, "rev": 1.3e8, "time": 480.0, "mgr": 4e8},
 	{"name": "Crypto-Casinò", "desc": "Scommesse sulla blockchain. Fidati.", "icon": "crypto", "color": Color("8a4fd1"),
-	 "cost": 2.14990848e9, "coef": 1.08, "rev": 1.074954240e9, "time": 6144.0, "mgr": 1e10},
+	 "cost": 2.14990848e9, "coef": 1.08, "rev": 1.6e9, "time": 1600.0, "mgr": 5e9},
 	{"name": "Casinò Lunare", "desc": "Gravità bassa, puntate altissime.", "icon": "moon", "color": Color("5ac35a"),
-	 "cost": 2.579890176e10, "coef": 1.07, "rev": 2.9668737024e10, "time": 36864.0, "mgr": 1e11},
+	 "cost": 2.579890176e10, "coef": 1.07, "rev": 4.2e10, "time": 6400.0, "mgr": 5e10},
 ]
 
 const MANAGERS := [
@@ -48,57 +51,96 @@ const MANAGERS := [
 	{"name": "L'Astronauta", "line": "Houston, abbiamo un jackpot.", "face": {"hat": "helmet", "skin": Color("8d5524")}},
 ]
 
-const CITIES := [
-	{"name": "Napoli", "debt": 1e6, "boss": "Zio Tano 'o Squalo"},
-	{"name": "Montecarlo", "debt": 1e9, "boss": "Le Requin"},
-	{"name": "Las Vegas", "debt": 1e12, "boss": "Big Shark Tony"},
-	{"name": "Macao", "debt": 1e15, "boss": "Madame Shā"},
-	{"name": "Dubai", "debt": 1e18, "boss": "Lo Sceicco Pinna"},
-	{"name": "Luna", "debt": 1e21, "boss": "Lo Squalo Spaziale"},
-	{"name": "Marte", "debt": 1e25, "boss": "Il Megalodonte"},
+# Scadenze (Deadlines) della run: ogni scadenza ha tot giorni e una quota da versare
+const DEADLINES := [
+	{"name": "Napoli — Il Pizzo", "boss": "Zio Tano 'o Squalo", "quota": 2500.0, "days": 3},
+	{"name": "Napoli — Gli Interessi", "boss": "Zio Tano 'o Squalo", "quota": 35000.0, "days": 3},
+	{"name": "Montecarlo — Il Tavolo VIP", "boss": "Le Requin", "quota": 500000.0, "days": 3},
+	{"name": "Las Vegas — La Strip", "boss": "Big Shark Tony", "quota": 1.0e7, "days": 3},
+	{"name": "Macao — La Triade", "boss": "Madame Shā", "quota": 2.5e8, "days": 4},
+	{"name": "Dubai — Il Grattacielo", "boss": "Lo Sceicco Pinna", "quota": 8.0e9, "days": 4},
+	{"name": "Base Lunare — Il Cratere", "boss": "Lo Squalo Spaziale", "quota": 3.0e11, "days": 4},
+	{"name": "Marte — Il Casinò Rosso", "boss": "Il Megalodonte", "quota": 1.5e13, "days": 4},
+]
+
+# Amuleti da vetrinetta (ispirati a CloverPit): si comprano coi Ticket tra una scadenza e l'altra (o in Bottega)
+const CHARMS := [
+	{"id": "peperoncino", "name": "Peperoncino Piccante", "rarity": "Comune", "cost": 3, "col": Color("d6344a"), "sym": "cherry",
+	 "desc": "Vincite ai minigiochi x1.6 e +2 Fortuna."},
+	{"id": "zampa", "name": "Zampa di Coniglio", "rarity": "Comune", "cost": 3, "col": Color("f2b632"), "sym": "clover",
+	 "desc": "+4 Fortuna. I Gratta e Vinci pagano x1.5."},
+	{"id": "magnete", "name": "Magnete da Slot", "rarity": "Raro", "cost": 5, "col": Color("3a6fd8"), "sym": "horseshoe",
+	 "desc": "Nella Slot 777 il simbolo 7 esce il triplo più spesso!"},
+	{"id": "dado_piombo", "name": "Dado Piombato", "rarity": "Raro", "cost": 5, "col": Color("2bb3a3"), "sym": "diamond",
+	 "desc": "Ai Dadi i Doppi pagano x4 (invece di x2) e +15% vittoria."},
+	{"id": "clessidra", "name": "Clessidra Truccata", "rarity": "Raro", "cost": 6, "col": Color("f07f2e"), "sym": "bell",
+	 "desc": "+25 secondi a ogni Giorno prima che suoni la sirena!"},
+	{"id": "stampante", "name": "Stampante Clandestina", "rarity": "Epico", "cost": 8, "col": Color("5ac35a"), "sym": "clover",
+	 "desc": "Tutte le attività della Sala producono x2.5!"},
+	{"id": "gatto_oro", "name": "Maneki-Neko d'Oro", "rarity": "Epico", "cost": 7, "col": Color("f2b632"), "sym": "bell",
+	 "desc": "Il Gatto Dorato appare 2x più spesso e dà anche +2 Ticket!"},
+	{"id": "teschio", "name": "Teschio del Baro", "rarity": "Epico", "cost": 9, "col": Color("8a4fd1"), "sym": "seven",
+	 "desc": "Raddoppia o Lascia: 35% di salvarti se perdi, e +10% chance!"},
+	{"id": "valigetta", "name": "Valigetta Diplomatica", "rarity": "Raro", "cost": 5, "col": Color("8a5a3c"), "sym": "diamond",
+	 "desc": "+60% Ticket ottenuti dal surplus quando saldi una scadenza."},
+	{"id": "croupier", "name": "Guanto del Croupier", "rarity": "Epico", "cost": 8, "col": Color("ff6fae"), "sym": "horseshoe",
+	 "desc": "Velocità di tutte le attività x2 e Manager -40% costo."},
+	{"id": "limone", "name": "Limone Spremuto", "rarity": "Comune", "cost": 3, "col": Color("ffe14d"), "sym": "lemon",
+	 "desc": "Ogni giocata persa ai minigiochi ti rimborsa il 35% della puntata."},
+	{"id": "dente_squalo", "name": "Dente dello Squalo", "rarity": "Leggendario", "cost": 14, "col": Color("d6344a"), "sym": "seven",
+	 "desc": "Riduce tutte le Quote dello Squalo del 25% e guadagni x2!"},
 ]
 
 const SPEED_MILESTONES := [25, 50, 100, 200, 300, 400]
 const SYNERGY_MILESTONES := [10, 25, 50, 100, 200, 300, 400, 500, 750, 1000]
 
-# Talismani: costi in quadrifogli (sacrificati come in AdCap)
+# Talismani PERMANENTI (sopravvivono alla morte / nuova run, si comprano coi Ticket)
 const TALISMANS := [
-	{"id": "cornetto", "name": "Cornetto Rosso", "desc": "Inizi ogni fuga con più soldi.", "base": 3.0, "grow": 3.0, "max": 10},
-	{"id": "ferro", "name": "Ferro di Cavallo", "desc": "+1 Fortuna permanente.", "base": 2.0, "grow": 2.2, "max": 15},
-	{"id": "gatto", "name": "Gatto Nero", "desc": "Il gatto dorato appare più spesso.", "base": 8.0, "grow": 3.0, "max": 5},
-	{"id": "autogratta", "name": "Grattatore Automatico", "desc": "Gratta biglietti da solo.", "base": 12.0, "grow": 3.0, "max": 5},
-	{"id": "autoleva", "name": "Leva Automatica", "desc": "Gira la slot da sola.", "base": 25.0, "grow": 3.0, "max": 5},
-	{"id": "contabile", "name": "Contabile Corrotto", "desc": "Manager -30% di costo per livello.", "base": 6.0, "grow": 4.0, "max": 3},
-	{"id": "salvadanaio", "name": "Salvadanaio", "desc": "Guadagni offline +10% per livello.", "base": 4.0, "grow": 2.5, "max": 5},
-	{"id": "quadrifoglio", "name": "Quadrifoglio d'Oro", "desc": "Ogni quadrifoglio dà +1% in più.", "base": 20.0, "grow": 2.5, "max": 10},
-	{"id": "dadi", "name": "Dadi Truccati", "desc": "+3% vittoria su Raddoppia e Dadi.", "base": 5.0, "grow": 2.5, "max": 5},
+	{"id": "cornetto", "name": "Cornetto Rosso", "desc": "Inizi ogni Run con più soldi e 1 Edicola già attiva.", "base": 2.0, "grow": 2.0, "max": 10},
+	{"id": "ferro", "name": "Ferro di Cavallo", "desc": "+2 Fortuna permanente in tutte le Run.", "base": 2.0, "grow": 1.8, "max": 15},
+	{"id": "vetrina", "name": "Vetrinetta Extra", "desc": "+1 slot Amuleto equipaggiabile (fino a 7).", "base": 5.0, "grow": 3.0, "max": 3},
+	{"id": "autogratta", "name": "Grattatore Automatico", "desc": "Gratta biglietti gratis da solo in background.", "base": 4.0, "grow": 2.2, "max": 5},
+	{"id": "autoleva", "name": "Leva Automatica", "desc": "Gira la slot gratis da sola in background.", "base": 6.0, "grow": 2.2, "max": 5},
+	{"id": "contabile", "name": "Contabile Corrotto", "desc": "Manager -30% di costo per livello.", "base": 3.0, "grow": 2.5, "max": 4},
+	{"id": "orologio", "name": "Orologio Svizzero", "desc": "+10 secondi per ogni Giorno della scadenza.", "base": 4.0, "grow": 2.2, "max": 5},
+	{"id": "fuga_oro", "name": "Passaporto Falso", "desc": "+25% guadagni globali permanenti per livello.", "base": 3.0, "grow": 1.8, "max": 20},
+	{"id": "dadi", "name": "Dadi Truccati", "desc": "+4% vittoria su Raddoppia, Dadi e Ruota.", "base": 3.0, "grow": 2.0, "max": 5},
 ]
 
 const SCRATCH_PRIZES := [
-	{"sym": "cherry", "mult": 1.0, "w": 45.0},
-	{"sym": "lemon", "mult": 2.0, "w": 25.0},
-	{"sym": "bell", "mult": 3.0, "w": 14.0},
-	{"sym": "clover", "mult": 5.0, "w": 9.0},
-	{"sym": "horseshoe", "mult": 10.0, "w": 5.0},
-	{"sym": "diamond", "mult": 50.0, "w": 1.7},
-	{"sym": "seven", "mult": 500.0, "w": 0.3},
+	{"sym": "cherry", "mult": 1.5, "w": 42.0},
+	{"sym": "lemon", "mult": 2.5, "w": 25.0},
+	{"sym": "bell", "mult": 4.0, "w": 15.0},
+	{"sym": "clover", "mult": 7.0, "w": 9.0},
+	{"sym": "horseshoe", "mult": 15.0, "w": 5.5},
+	{"sym": "diamond", "mult": 60.0, "w": 2.5},
+	{"sym": "seven", "mult": 500.0, "w": 1.0},
 ]
-const SLOT_WEIGHTS := {"cherry": 30.0, "lemon": 25.0, "bell": 18.0, "clover": 12.0, "horseshoe": 8.0, "diamond": 5.0, "seven": 2.0}
+const SLOT_WEIGHTS := {"cherry": 28.0, "lemon": 24.0, "bell": 18.0, "clover": 12.0, "horseshoe": 9.0, "diamond": 6.0, "seven": 3.0}
 const SLOT_PAY := {"cherry": 5.0, "lemon": 8.0, "bell": 15.0, "clover": 30.0, "horseshoe": 60.0, "diamond": 200.0, "seven": 1000.0}
 
+# Spicchi della Ruota del Destino (pensata per gli streamer: alta tensione!)
+const WHEEL_SLICES := [
+	{"label": "JACKPOT x8", "col": Color("f2b632"), "kind": "mult", "val": 8.0},
+	{"label": "TESCHIO (0)", "col": Color("1b1420"), "kind": "mult", "val": 0.0},
+	{"label": "RADDOPPIA x2", "col": Color("2bb3a3"), "kind": "mult", "val": 2.0},
+	{"label": "+3 TICKET!", "col": Color("5ac35a"), "kind": "tickets", "val": 3.0},
+	{"label": "TRIPLICA x3", "col": Color("3a6fd8"), "kind": "mult", "val": 3.0},
+	{"label": "SQUALO (-50%)", "col": Color("d6344a"), "kind": "shark", "val": 0.5},
+	{"label": "FRENESIA x7!", "col": Color("f07f2e"), "kind": "frenzy", "val": 25.0},
+	{"label": "TESCHIO (0)", "col": Color("1b1420"), "kind": "mult", "val": 0.0},
+]
+
 const SHARK_LINES := [
-	"Lo Squalo: \"Ricordati di me. Io mi ricordo di te.\"",
-	"Lo Squalo: \"Bel posto. Sarebbe un peccato se prendesse fuoco.\"",
-	"Lo Squalo: \"Gli interessi non dormono. Nemmeno io.\"",
-	"Lo Squalo: \"Hai visto il mio dente d'oro? L'ho preso all'ultimo che non pagava.\"",
-	"Lo Squalo: \"Tic tac. Tic tac.\"",
-	"Lo Squalo: \"Mia madre dice che sei un bravo ragazzo. Dimostralo.\"",
-	"Lo Squalo: \"Oggi mi sento generoso. Domani no.\"",
-	"Un tizio in giacca ti fissa dall'angolo. Meglio pagare.",
+	"Lo Squalo: \"Il tempo scorre, guagliò. Vedo pochi soldi nella cassa.\"",
+	"Lo Squalo: \"Bel posto. Sarebbe un peccato se stasera chiudesse per sempre.\"",
+	"Lo Squalo: \"Hai sentito il ticchettio? Non è un orologio. Sono io.\"",
+	"Lo Squalo: \"Paga in anticipo e ti riempio di Ticket. Ritarda e nuoti coi pesci.\"",
+	"Lo Squalo: \"Gira quella Ruota del Destino, vediamo se hai fegato!\"",
 ]
 
 # ------------------------------------------------------------------ STATO
-var money := 5.0
+var money := 15.0
 var run_earned := 0.0
 var all_earned := 0.0
 var owned: Array = []
@@ -106,13 +148,26 @@ var managers: Array = []
 var progress: Array = []
 var running: Array = []
 var upgrades_bought := {}
+
+# Sistema Ticket + Scadenze + Amuleti (CloverPit style)
+var tickets := 3
+var total_tickets_earned := 3
 var clovers := 0.0
 var clovers_spent := 0.0
 var talismans := {}
-var city := 0
+var equipped_charms: Array = [] # lista di id amuleti nella vetrinetta della run
+var shop_offers: Array = []     # 3 amuleti proposti nella bottega
+
+var deadline_idx := 0
+var day_in_deadline := 1
+var day_time_left := 75.0
 var debt_paid := 0.0
+var deadline_paused := false
 var cities_cleared := 0
-var stats := {"scratch": 0, "spins": 0, "rolls": 0, "jackpots": 0, "cats": 0, "best_double": 0, "prestiges": 0, "biggest_win": 0.0, "play_time": 0.0}
+var best_deadline := 0
+var runs_played := 1
+
+var stats := {"scratch": 0, "spins": 0, "rolls": 0, "wheels": 0, "jackpots": 0, "cats": 0, "best_double": 0, "prestiges": 0, "biggest_win": 0.0, "play_time": 0.0, "deaths": 0}
 var achievements := {}
 var buy_mode := 0  # 0=x1 1=x10 2=x100 3=MAX
 var stake_mult := 1.0
@@ -126,7 +181,7 @@ var UPGRADES: Array = []
 var ACHIEVEMENTS: Array = []
 
 var _autosave_t := 0.0
-var _shark_t := 90.0
+var _shark_t := 45.0
 var _ach_t := 0.0
 var _auto_scratch_t := 0.0
 var _auto_spin_t := 0.0
@@ -137,37 +192,251 @@ func _ready() -> void:
 	_build_upgrades()
 	_build_achievements()
 	_reset_run_arrays()
-	var args := OS.get_cmdline_user_args()
-	for a in args:
+	for a in OS.get_cmdline_user_args():
 		if a == "--fresh":
 			save_path = "user://save_test.json"
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(save_path))
 	load_game()
+	if shop_offers.is_empty():
+		roll_shop_offers()
+	if owned[0] == 0 and run_earned == 0:
+		_apply_run_start_bonuses()
 
 func _reset_run_arrays() -> void:
 	owned.clear(); managers.clear(); progress.clear(); running.clear()
 	for i in BUSINESSES.size():
 		owned.append(0); managers.append(false); progress.append(0.0); running.append(false)
 
+func _apply_run_start_bonuses() -> void:
+	money = start_money_for(tal("cornetto"))
+	owned[0] = 1 + tal("cornetto")
+	if tal("cornetto") >= 2:
+		managers[0] = true
+		running[0] = true
+	day_time_left = day_duration()
+
+# ------------------------------------------------------------------ AMULETI (VETRINETTA)
+func max_charms() -> int:
+	return 4 + tal("vetrina")
+
+func has_charm(id: String) -> bool:
+	return equipped_charms.has(id)
+
+func charm_count(id: String) -> int:
+	var c := 0
+	for x in equipped_charms:
+		if x == id:
+			c += 1
+	return c
+
+func charm_def(id: String) -> Dictionary:
+	for c in CHARMS:
+		if c["id"] == id:
+			return c
+	return CHARMS[0]
+
+func roll_shop_offers() -> void:
+	shop_offers.clear()
+	var pool := CHARMS.duplicate()
+	pool.shuffle()
+	for c in pool:
+		if not equipped_charms.has(c["id"]) and shop_offers.size() < 3:
+			shop_offers.append(c["id"])
+	while shop_offers.size() < 3:
+		shop_offers.append(CHARMS.pick_random()["id"])
+
+func reroll_shop() -> bool:
+	if tickets < 1:
+		return false
+	tickets -= 1
+	roll_shop_offers()
+	Sfx.play("dice")
+	return true
+
+func buy_charm(id: String) -> bool:
+	if equipped_charms.size() >= max_charms():
+		toast.emit("Vetrinetta piena! Vendi un Amuleto o sblocca Vetrinetta Extra.", S.RED)
+		return false
+	var d := charm_def(id)
+	var cost: int = d["cost"]
+	if tickets < cost:
+		return false
+	tickets -= cost
+	equipped_charms.append(id)
+	shop_offers.erase(id)
+	if id == "clessidra":
+		day_time_left += 25.0
+	_cache_t = 0.0
+	Sfx.play("jackpot")
+	toast.emit("Amuleto equipaggiato: " + d["name"] + "!", S.GOLD)
+	return true
+
+func sell_charm(idx: int) -> void:
+	if idx < 0 or idx >= equipped_charms.size():
+		return
+	var id: String = equipped_charms[idx]
+	var d := charm_def(id)
+	var refund := maxi(1, int(d["cost"] / 2))
+	equipped_charms.remove_at(idx)
+	tickets += refund
+	_cache_t = 0.0
+	Sfx.play("coin")
+	toast.emit("Venduto %s (+%d Ticket)" % [d["name"], refund], S.GOLD)
+
+# ------------------------------------------------------------------ SCADENZE & GIORNI (CLOVERPIT LOOP)
+func deadline_data() -> Dictionary:
+	var base: Dictionary
+	if deadline_idx < DEADLINES.size():
+		base = DEADLINES[deadline_idx].duplicate()
+	else:
+		var extra := deadline_idx - DEADLINES.size() + 1
+		base = {
+			"name": "Inferno d'Oro #%d" % extra,
+			"boss": "Il Megalodonte Cosmico",
+			"quota": 1.5e13 * pow(25.0, extra),
+			"days": 4,
+		}
+	if has_charm("dente_squalo"):
+		base["quota"] *= 0.75
+	return base
+
+func city_data() -> Dictionary:
+	var d := deadline_data()
+	return {"name": d["name"], "debt": d["quota"], "boss": d["boss"], "days": d["days"]}
+
+func day_duration() -> float:
+	return 75.0 + 10.0 * tal("orologio") + (25.0 if has_charm("clessidra") else 0.0)
+
+func debt_left() -> float:
+	return maxf(0.0, float(deadline_data()["quota"]) - debt_paid)
+
+## Calcola i Ticket che ricevi saldando la scadenza ora (più surplus e più giorni risparmiati = più Ticket!)
+func calc_deadline_tickets(surplus_money: float, days_saved: int) -> int:
+	var quota := float(deadline_data()["quota"])
+	var ratio := maxf(0.0, surplus_money / maxf(1.0, quota))
+	var bonus_surplus := int(floor(pow(ratio, 0.45) * 2.5))
+	var base_t := 3 + deadline_idx + days_saved * 2 + clampi(bonus_surplus, 0, 25)
+	if has_charm("valigetta"):
+		base_t = int(ceil(base_t * 1.6))
+	return base_t
+
+func pay_debt() -> float:
+	var amt := minf(money, debt_left())
+	if amt <= 0:
+		return 0.0
+	money -= amt
+	debt_paid += amt
+	Sfx.play("cash")
+	if debt_left() <= 0.01:
+		_complete_deadline()
+	return amt
+
+func _complete_deadline() -> void:
+	var dd := deadline_data()
+	var days_saved := maxi(0, int(dd["days"]) - day_in_deadline)
+	var surplus := money
+	var t_gain := calc_deadline_tickets(surplus, days_saved)
+	tickets += t_gain
+	total_tickets_earned += t_gain
+	clovers += 1.0 + deadline_idx * 0.5
+	cities_cleared += 1
+	if deadline_idx + 1 > best_deadline:
+		best_deadline = deadline_idx + 1
+	deadline_paused = true
+	roll_shop_offers()
+	Sfx.play("jackpot")
+	check_achievements()
+	save_game()
+	open_deadline_modal.emit(true, {
+		"boss": dd["boss"],
+		"name": dd["name"],
+		"quota": dd["quota"],
+		"surplus": surplus,
+		"days_saved": days_saved,
+		"tickets": t_gain,
+		"next_idx": deadline_idx + 1,
+	})
+
+func advance_to_next_deadline() -> void:
+	deadline_idx += 1
+	debt_paid = 0.0
+	day_in_deadline = 1
+	day_time_left = day_duration()
+	deadline_paused = false
+	_cache_t = 0.0
+	save_game()
+
+func _trigger_deadline_timeout() -> void:
+	# Se hai abbastanza soldi in tasca per saldare sulla sirena, lo Squalo se li prende al volo!
+	if money >= debt_left():
+		money -= debt_left()
+		debt_paid = float(deadline_data()["quota"])
+		toast.emit("Saldato all'ultimo secondo sulla sirena!", S.GOLD)
+		_complete_deadline()
+		return
+	var dd := deadline_data()
+	var next_day: int = day_in_deadline + 1
+	if next_day <= int(dd["days"]):
+		day_in_deadline = next_day
+		day_time_left = day_duration()
+		Sfx.play("lose")
+		toast.emit("FINE GIORNO %d! Lo Squalo bussa alla porta..." % (day_in_deadline - 1), S.RED)
+	else:
+		# GAME OVER DELLA RUN (stile CloverPit): lo Squalo ti pignora la bisca, ma tieni Ticket & Talismani!
+		deadline_paused = true
+		stats["deaths"] = int(stats.get("deaths", 0)) + 1
+		var consolation := maxi(2, 1 + deadline_idx * 2 + int(floor(debt_paid / maxf(1.0, float(dd["quota"])) * 3.0)))
+		tickets += consolation
+		total_tickets_earned += consolation
+		roll_shop_offers()
+		Sfx.play("lose")
+		open_deadline_modal.emit(false, {
+			"boss": dd["boss"],
+			"name": dd["name"],
+			"quota": dd["quota"],
+			"paid": debt_paid,
+			"tickets": consolation,
+		})
+
+## Nuova Run dopo essere stati stesi dallo Squalo (o fuga volontaria): soft reset con tutti i potenziamenti permanenti!
+func start_new_run(keep_charms := false) -> void:
+	runs_played += 1
+	stats["prestiges"] += 1
+	deadline_idx = 0
+	debt_paid = 0.0
+	day_in_deadline = 1
+	run_earned = 0.0
+	_reset_run_arrays()
+	upgrades_bought.clear()
+	if not keep_charms:
+		equipped_charms.clear()
+	frenzy_time = 0.0
+	luckboost_time = 0.0
+	stake_mult = 1.0
+	_apply_run_start_bonuses()
+	deadline_paused = false
+	roll_shop_offers()
+	_cache_t = 0.0
+	save_game()
+	state_reset.emit()
+
 # ------------------------------------------------------------------ UPGRADES
 func _build_upgrades() -> void:
 	UPGRADES.clear()
 	var flavor := ["Insegna al neon", "Biglietti dorati", "Musica da ascensore", "Ragazze immagine", "Cocktail gratis", "Moquette ipnotica", "Orologi spariti", "Ossigeno in sala"]
-	# tier iniziale x2 (prezzo legato al costo base)
 	for i in BUSINESSES.size():
-		UPGRADES.append({"id": "e%d" % i, "name": "Cartello luminoso", "target": i, "mult": 2.0, "cost": BUSINESSES[i]["cost"] * 250.0})
+		UPGRADES.append({"id": "e%d" % i, "name": "Cartello luminoso", "target": i, "mult": 2.0, "cost": BUSINESSES[i]["cost"] * 120.0})
 	for t in 8:
 		for i in BUSINESSES.size():
-			var cost := 2.5e5 * pow(10.0, 0.6 * i) * pow(1e6, t)
+			var cost := 1.0e5 * pow(10.0, 0.55 * i) * pow(1e5, t)
 			UPGRADES.append({"id": "t%d_%d" % [t, i], "name": flavor[t], "target": i, "mult": 3.0, "cost": cost})
-		UPGRADES.append({"id": "all%d" % t, "name": "Campagna pubblicitaria %d" % (t + 1), "target": -1, "mult": 3.0, "cost": 1.5e11 * pow(1e6, t)})
-	# minigiochi
+		UPGRADES.append({"id": "all%d" % t, "name": "Campagna pubblicitaria %d" % (t + 1), "target": -1, "mult": 3.0, "cost": 5.0e9 * pow(1e5, t)})
 	var gnames := ["Monetina fortunata", "Unghie d'acciaio", "Leva oliata", "Dadi d'avorio", "Occhio di tigre", "Sorriso del banco", "Talento naturale", "Mano santa"]
 	for k in 8:
-		UPGRADES.append({"id": "g%d" % k, "name": gnames[k], "target": -2, "mult": 2.0, "cost": 500.0 * pow(80.0, k)})
+		UPGRADES.append({"id": "g%d" % k, "name": gnames[k], "target": -2, "mult": 2.0, "cost": 250.0 * pow(45.0, k)})
 	var lnames := ["Cornicello in tasca", "Calzini fortunati", "Santino nel portafoglio", "Coccinella sul cappello", "Oroscopo favorevole", "Numero 17 evitato"]
 	for k in 6:
-		UPGRADES.append({"id": "l%d" % k, "name": lnames[k], "target": -3, "mult": 1.0, "cost": 2000.0 * pow(400.0, k)})
+		UPGRADES.append({"id": "l%d" % k, "name": lnames[k], "target": -3, "mult": 1.0, "cost": 800.0 * pow(180.0, k)})
 	UPGRADES.sort_custom(func(a, b): return a["cost"] < b["cost"])
 
 func upgrade_desc(u: Dictionary) -> String:
@@ -199,22 +468,20 @@ func _build_achievements() -> void:
 	for i in BUSINESSES.size():
 		for n in [25, 100, 250, 500]:
 			ACHIEVEMENTS.append({"id": "b%d_%d" % [i, n], "name": "%s x%d" % [BUSINESSES[i]["name"], n], "kind": "own", "i": i, "n": n})
-	for p in [3, 6, 9, 12, 15, 18, 21, 24, 30]:
+	for p in [3, 6, 9, 12, 15, 18, 21, 24]:
 		ACHIEVEMENTS.append({"id": "earn%d" % p, "name": "Guadagna %s in totale" % fmt(pow(10.0, p)), "kind": "earn", "n": pow(10.0, p)})
-	for n in [10, 100, 1000, 10000]:
+	for n in [10, 100, 500]:
 		ACHIEVEMENTS.append({"id": "sc%d" % n, "name": "Gratta %d biglietti" % n, "kind": "stat", "stat": "scratch", "n": n})
 		ACHIEVEMENTS.append({"id": "sp%d" % n, "name": "Gira la slot %d volte" % n, "kind": "stat", "stat": "spins", "n": n})
 		ACHIEVEMENTS.append({"id": "dr%d" % n, "name": "Lancia i dadi %d volte" % n, "kind": "stat", "stat": "rolls", "n": n})
 	for n in [1, 10, 50]:
 		ACHIEVEMENTS.append({"id": "jp%d" % n, "name": "Fai %d jackpot" % n, "kind": "stat", "stat": "jackpots", "n": n})
-	for n in [1, 10, 50, 200]:
+	for n in [1, 10, 50]:
 		ACHIEVEMENTS.append({"id": "cat%d" % n, "name": "Accarezza %d gatti dorati" % n, "kind": "stat", "stat": "cats", "n": n})
 	for n in [3, 5, 8, 10]:
 		ACHIEVEMENTS.append({"id": "dbl%d" % n, "name": "Raddoppia %d volte di fila" % n, "kind": "stat", "stat": "best_double", "n": n})
-	for n in [1, 3, 10, 25]:
-		ACHIEVEMENTS.append({"id": "pr%d" % n, "name": "Fuggi %d volte" % n, "kind": "stat", "stat": "prestiges", "n": n})
-	for n in [1, 2, 3, 5, 7]:
-		ACHIEVEMENTS.append({"id": "city%d" % n, "name": "Ripaga %d Squali" % n, "kind": "city", "n": n})
+	for n in [1, 3, 5, 8]:
+		ACHIEVEMENTS.append({"id": "city%d" % n, "name": "Supera %d Scadenze dello Squalo" % n, "kind": "city", "n": n})
 
 func check_achievements() -> void:
 	for a in ACHIEVEMENTS:
@@ -234,7 +501,7 @@ func check_achievements() -> void:
 func achievement_mult() -> float:
 	return 1.0 + 0.02 * achievements.size()
 
-# ------------------------------------------------------------------ TALISMANI
+# ------------------------------------------------------------------ TALISMANI (CON TICKET)
 func tal(id: String) -> int:
 	return int(talismans.get(id, 0))
 
@@ -244,52 +511,53 @@ func tal_def(id: String) -> Dictionary:
 			return t
 	return {}
 
-func tal_cost(id: String) -> float:
+func tal_cost(id: String) -> int:
 	var d := tal_def(id)
-	return ceil(d["base"] * pow(d["grow"], tal(id)))
+	return int(ceil(d["base"] * pow(d["grow"], tal(id))))
 
 func buy_talisman(id: String) -> bool:
 	var d := tal_def(id)
 	if tal(id) >= d["max"]:
 		return false
 	var c := tal_cost(id)
-	if clovers < c:
+	if tickets < c:
 		return false
-	clovers -= c
-	clovers_spent += c
+	tickets -= c
 	talismans[id] = tal(id) + 1
+	if id == "orologio":
+		day_time_left += 10.0
 	Sfx.play("jackpot")
 	_cache_t = 0.0
 	return true
 
 func tal_effect_text(id: String, lvl: int) -> String:
 	match id:
-		"cornetto": return "Soldi iniziali: %s" % fmt(start_money_for(lvl))
-		"ferro": return "Fortuna +%d" % lvl
-		"gatto": return "Frequenza gatto x%.1f" % (1.0 + 0.35 * lvl)
+		"cornetto": return "Start: %s + %d Edicole" % [fmt(start_money_for(lvl)), 1 + lvl]
+		"ferro": return "Fortuna +%d" % (lvl * 2)
+		"vetrina": return "%d slot Amuleti" % (4 + lvl)
 		"autogratta": return "Off" if lvl == 0 else "1 biglietto ogni %.1fs" % auto_interval(lvl)
 		"autoleva": return "Off" if lvl == 0 else "1 giro ogni %.1fs" % auto_interval(lvl)
 		"contabile": return "Manager -%d%%" % int((1.0 - pow(0.7, lvl)) * 100)
-		"salvadanaio": return "Offline %d%%" % (50 + 10 * lvl)
-		"quadrifoglio": return "+%d%% per quadrifoglio" % (2 + lvl)
-		"dadi": return "+%d%% vittoria" % (3 * lvl)
+		"orologio": return "+%ds per Giorno" % (10 * lvl)
+		"fuga_oro": return "Guadagni +%d%%" % (25 * lvl)
+		"dadi": return "+%d%% vittoria" % (4 * lvl)
 	return ""
 
 func start_money_for(lvl: int) -> float:
-	return 5.0 if lvl == 0 else 10.0 * pow(10.0, lvl)
+	return 15.0 if lvl == 0 else 50.0 * pow(4.0, lvl)
 
 func auto_interval(lvl: int) -> float:
-	return 4.0 / (1.0 + 0.6 * (lvl - 1))
+	return 3.5 / (1.0 + 0.6 * (lvl - 1))
 
 # ------------------------------------------------------------------ MOLTIPLICATORI
 func clover_eff() -> float:
-	return 0.02 + 0.01 * tal("quadrifoglio")
+	return 0.10
 
 func clover_mult() -> float:
-	return 1.0 + clovers * clover_eff()
+	return (1.0 + clovers * clover_eff()) * (1.0 + 0.25 * tal("fuga_oro"))
 
 func city_mult() -> float:
-	return pow(3.0, cities_cleared)
+	return pow(1.5, deadline_idx)
 
 func synergy_level() -> int:
 	var mn: int = owned.min()
@@ -304,6 +572,10 @@ func global_mult() -> float:
 	for u in UPGRADES:
 		if u["target"] == -1 and upgrades_bought.has(u["id"]):
 			m *= u["mult"]
+	if has_charm("stampante"):
+		m *= 2.5
+	if has_charm("dente_squalo"):
+		m *= 2.0
 	if frenzy_time > 0:
 		m *= 7.0
 	return m
@@ -335,16 +607,21 @@ func next_milestone(i: int) -> int:
 	return int((floor(owned[i] / 100.0) + 1) * 100)
 
 func cycle_time(i: int) -> float:
-	return BUSINESSES[i]["time"] / pow(2.0, speed_level(i))
+	var t: float = BUSINESSES[i]["time"] / pow(2.0, speed_level(i))
+	if has_charm("croupier"):
+		t *= 0.5
+	return t
 
 func cycle_revenue(i: int) -> float:
 	return BUSINESSES[i]["rev"] * owned[i] * upgrade_mult(i) * milestone_profit_mult(i) * global_mult()
 
 func luck() -> int:
-	var l := tal("ferro")
+	var l := tal("ferro") * 2
 	for u in UPGRADES:
 		if u["target"] == -3 and upgrades_bought.has(u["id"]):
 			l += 1
+	if has_charm("peperoncino"): l += 2
+	if has_charm("zampa"): l += 4
 	return l
 
 func game_mult() -> float:
@@ -352,6 +629,10 @@ func game_mult() -> float:
 	for u in UPGRADES:
 		if u["target"] == -2 and upgrades_bought.has(u["id"]):
 			m *= u["mult"]
+	if has_charm("peperoncino"):
+		m *= 1.6
+	if has_charm("dente_squalo"):
+		m *= 2.0
 	if luckboost_time > 0:
 		m *= 5.0
 	return m
@@ -366,15 +647,14 @@ func income_per_sec(only_managed := true) -> float:
 func ips_cached() -> float:
 	return _cache_ips
 
-## Puntata base dei minigiochi: scala con le entrate ma resta sempre giocabile a x1.
 func base_stake() -> float:
 	var ips := income_per_sec(false)
-	var s := maxf(1.0, minf(maxf(1.0, ips * 2.5), maxf(1.0, money * 0.25)))
+	var s := maxf(1.0, minf(maxf(2.0, ips * 2.5), maxf(1.0, money * 0.25)))
 	var p := pow(10.0, floor(log(s) / log(10.0)))
 	return maxf(1.0, floor(s / p) * p)
 
 func stake() -> float:
-	return base_stake() * stake_mult
+	return minf(maxf(1.0, money), base_stake() * stake_mult)
 
 # ------------------------------------------------------------------ COSTI
 func cost_of(i: int, n: int) -> float:
@@ -395,7 +675,7 @@ func buy_amount(i: int) -> int:
 		0: return 1
 		1: return 10
 		2: return 100
-		_: return max(1, max_affordable(i))
+		_: return maxi(1, max_affordable(i))
 
 func buy_business(i: int) -> bool:
 	var n := buy_amount(i)
@@ -417,7 +697,10 @@ func buy_business(i: int) -> bool:
 	return true
 
 func manager_cost(i: int) -> float:
-	return BUSINESSES[i]["mgr"] * pow(0.7, tal("contabile"))
+	var m: float = BUSINESSES[i]["mgr"] * pow(0.7, tal("contabile"))
+	if has_charm("croupier"):
+		m *= 0.6
+	return m
 
 func hire_manager(i: int) -> bool:
 	if managers[i] or money < manager_cost(i) or owned[i] <= 0:
@@ -445,8 +728,13 @@ func earn(v: float) -> void:
 
 func _process(delta: float) -> void:
 	stats["play_time"] += delta
-	if frenzy_time > 0: frenzy_time = max(0.0, frenzy_time - delta)
-	if luckboost_time > 0: luckboost_time = max(0.0, luckboost_time - delta)
+	if frenzy_time > 0: frenzy_time = maxf(0.0, frenzy_time - delta)
+	if luckboost_time > 0: luckboost_time = maxf(0.0, luckboost_time - delta)
+	# Timer del Giorno / Scadenza dello Squalo
+	if not deadline_paused and intro_seen:
+		day_time_left -= delta
+		if day_time_left <= 0.0:
+			_trigger_deadline_timeout()
 	for i in BUSINESSES.size():
 		if owned[i] <= 0 or not running[i]:
 			continue
@@ -463,18 +751,16 @@ func _process(delta: float) -> void:
 			var amt := cycle_revenue(i) * cycles
 			earn(amt)
 			cycle_done.emit(i, amt)
-	# cache entrate
 	_cache_t -= delta
 	if _cache_t <= 0:
-		_cache_t = 0.5
+		_cache_t = 0.4
 		_cache_ips = income_per_sec(true)
-	# auto-minigiochi
-	if tal("autogratta") > 0:
+	if tal("autogratta") > 0 and not deadline_paused:
 		_auto_scratch_t += delta
 		if _auto_scratch_t >= auto_interval(tal("autogratta")):
 			_auto_scratch_t = 0.0
 			_auto_play("scratch")
-	if tal("autoleva") > 0:
+	if tal("autoleva") > 0 and not deadline_paused:
 		_auto_spin_t += delta
 		if _auto_spin_t >= auto_interval(tal("autoleva")):
 			_auto_spin_t = 0.0
@@ -485,9 +771,8 @@ func _process(delta: float) -> void:
 		check_achievements()
 	_shark_t -= delta
 	if _shark_t <= 0:
-		_shark_t = randf_range(120, 240)
-		if true:
-			toast.emit(SHARK_LINES.pick_random(), S.RED)
+		_shark_t = randf_range(55, 110)
+		toast.emit(SHARK_LINES.pick_random(), S.RED)
 	_autosave_t += delta
 	if _autosave_t > 10.0:
 		_autosave_t = 0.0
@@ -496,14 +781,11 @@ func _process(delta: float) -> void:
 signal auto_result(kind: String, win: float)
 
 func _auto_play(kind: String) -> void:
-	var st := base_stake()
-	if money < st:
-		return
-	money -= st
+	var st := base_stake() * 0.5
 	var win := 0.0
 	if kind == "scratch":
 		var r := roll_scratch()
-		win = r["win"] * st
+		win = r["win"] * st * (1.5 if has_charm("zampa") else 1.0)
 		stats["scratch"] += 1
 	else:
 		var r := roll_slot()
@@ -512,9 +794,9 @@ func _auto_play(kind: String) -> void:
 	win *= game_mult()
 	if win > 0:
 		earn(win)
-	auto_result.emit(kind, win - st)
+		auto_result.emit(kind, win)
 
-# ------------------------------------------------------------------ MINIGIOCHI (logica)
+# ------------------------------------------------------------------ MINIGIOCHI
 func _weighted_pick(items: Array, key := "w") -> Dictionary:
 	var tot := 0.0
 	for it in items:
@@ -527,9 +809,8 @@ func _weighted_pick(items: Array, key := "w") -> Dictionary:
 	return items[-1]
 
 func scratch_win_chance() -> float:
-	return min(0.6, 0.28 + 0.015 * luck())
+	return minf(0.72, 0.36 + 0.018 * luck())
 
-## Restituisce {"grid": [9 simboli], "win": moltiplicatore, "sym": simbolo vincente}
 func roll_scratch() -> Dictionary:
 	var grid := []
 	var win := 0.0
@@ -537,7 +818,7 @@ func roll_scratch() -> Dictionary:
 	if randf() < scratch_win_chance():
 		var p := _weighted_pick(SCRATCH_PRIZES)
 		wsym = p["sym"]
-		win = p["mult"]
+		win = p["mult"] * (1.5 if has_charm("zampa") else 1.0)
 		grid = [wsym, wsym, wsym]
 	var counts := {}
 	for s in grid:
@@ -552,12 +833,16 @@ func roll_scratch() -> Dictionary:
 	return {"grid": grid, "win": win, "sym": wsym}
 
 func _slot_symbol() -> String:
+	var weights := SLOT_WEIGHTS.duplicate()
+	if has_charm("magnete"):
+		weights["seven"] = weights["seven"] * 3.2
+		weights["diamond"] = weights["diamond"] * 1.8
 	var tot := 0.0
-	for k in SLOT_WEIGHTS:
-		tot += SLOT_WEIGHTS[k]
+	for k in weights:
+		tot += weights[k]
 	var r := randf() * tot
-	for k in SLOT_WEIGHTS:
-		r -= SLOT_WEIGHTS[k]
+	for k in weights:
+		r -= weights[k]
 		if r <= 0:
 			return k
 	return "cherry"
@@ -566,22 +851,21 @@ func _slot_eval(reels: Array) -> Dictionary:
 	if reels[0] == reels[1] and reels[1] == reels[2]:
 		return {"mult": SLOT_PAY[reels[0]], "kind": "tris", "sym": reels[0]}
 	if reels[0] == reels[1] or reels[1] == reels[2] or reels[0] == reels[2]:
-		return {"mult": 2.0, "kind": "coppia", "sym": ""}
+		return {"mult": 2.5, "kind": "coppia", "sym": ""}
 	return {"mult": 0.0, "kind": "", "sym": ""}
 
 func roll_slot() -> Dictionary:
 	var reels := [_slot_symbol(), _slot_symbol(), _slot_symbol()]
 	var res := _slot_eval(reels)
-	if res["mult"] == 0.0 and randf() < min(0.45, 0.04 * luck()):
+	if res["mult"] == 0.0 and randf() < minf(0.55, 0.045 * luck()):
 		reels = [_slot_symbol(), _slot_symbol(), _slot_symbol()]
 		res = _slot_eval(reels)
 	res["reels"] = reels
 	return res
 
 func dice_bonus_chance() -> float:
-	return min(0.5, 0.03 * tal("dadi") + 0.02 * luck())
+	return minf(0.6, 0.04 * tal("dadi") + 0.02 * luck() + (0.15 if has_charm("dado_piombo") else 0.0))
 
-## bet: 0 sotto, 1 sette, 2 sopra
 func roll_dice(bet: int) -> Dictionary:
 	var d := [randi_range(1, 6), randi_range(1, 6)]
 	var won := _dice_win(bet, d[0] + d[1])
@@ -592,7 +876,7 @@ func roll_dice(bet: int) -> Dictionary:
 	if won:
 		mult = 6.0 if bet == 1 else 2.5
 		if d[0] == d[1]:
-			mult *= 2.0
+			mult *= (4.0 if has_charm("dado_piombo") else 2.0)
 	return {"dice": d, "mult": mult}
 
 func _dice_win(bet: int, sum: int) -> bool:
@@ -602,89 +886,41 @@ func _dice_win(bet: int, sum: int) -> bool:
 		_: return sum > 7
 
 func double_chance() -> float:
-	return min(0.65, 0.5 + 0.03 * tal("dadi") + 0.005 * luck())
+	return minf(0.75, 0.52 + 0.04 * tal("dadi") + 0.005 * luck() + (0.10 if has_charm("teschio") else 0.0))
 
 func register_win(win: float, st: float, label := "") -> void:
 	if win > stats["biggest_win"]:
 		stats["biggest_win"] = win
-	if win >= st * 100.0:
+	if win >= st * 50.0:
 		big_win.emit(win, label)
 
 # ------------------------------------------------------------------ GATTO
 func cat_interval() -> float:
-	return randf_range(70.0, 180.0) / (1.0 + 0.35 * tal("gatto"))
+	return randf_range(35.0, 75.0) / (2.0 if has_charm("gatto_oro") else 1.0)
 
 func cat_duration() -> float:
-	return 9.0 + 2.0 * tal("gatto")
+	return 11.0
 
 func claim_cat() -> void:
 	stats["cats"] += 1
+	if has_charm("gatto_oro"):
+		tickets += 2
+		total_tickets_earned += 2
 	var r := randf()
-	if r < 0.45:
+	if r < 0.40:
 		frenzy_time = 30.0
-		cat_reward.emit("FRENESIA! Attività x7 per 30s")
-	elif r < 0.75:
-		var v: float = max(income_per_sec(false) * 600.0, money * 0.15, 25.0)
+		cat_reward.emit("FRENESIA! Attività x7 per 30s" + (" (+2 Ticket!)" if has_charm("gatto_oro") else ""))
+	elif r < 0.72:
+		var v: float = maxf(income_per_sec(false) * 45.0, maxf(money * 0.35, 50.0))
 		earn(v)
 		cat_reward.emit("Il gatto sputa monete: +%s" % fmt(v))
 	else:
 		luckboost_time = 30.0
-		cat_reward.emit("FORTUNA SFACCIATA! Minigiochi x5 per 30s")
+		tickets += 1
+		total_tickets_earned += 1
+		cat_reward.emit("FORTUNA x5 (30s) + 1 TICKET D'ORO!")
 	_cache_t = 0.0
 	Sfx.play("jackpot")
-
-# ------------------------------------------------------------------ DEBITO / CITTÀ
-func city_data() -> Dictionary:
-	if city < CITIES.size():
-		return CITIES[city]
-	var n := city - CITIES.size() + 1
-	return {"name": "Dimensione X-%d" % n, "debt": 1e25 * pow(1e4, n), "boss": "Lo Squalo Cosmico #%d" % n}
-
-func debt_left() -> float:
-	return max(0.0, city_data()["debt"] - debt_paid)
-
-func pay_debt() -> float:
-	var amt: float = min(money, debt_left())
-	if amt <= 0:
-		return 0.0
-	money -= amt
-	debt_paid += amt
-	Sfx.play("cash")
-	if debt_left() <= 0.0:
-		var old := city_data()
-		cities_cleared += 1
-		city += 1
-		debt_paid = 0.0
-		_cache_t = 0.0
-		var nxt := city_data()
-		story.emit("DEBITO SALDATO!",
-			"%s conta i soldi. Due volte. Poi sorride con tutti i denti.\n\n\"Sei a posto, ragazzo. Per ora.\"\n\nBONUS PERMANENTE: tutte le entrate x3!\n\nMa la voce gira... A %s c'è %s, e dice che ora devi a LUI %s, per \"diritti di passaggio\"." % [old["boss"], nxt["name"], nxt["boss"], fmt(nxt["debt"])],
-			"Ah, ecco.")
-		check_achievements()
-	return amt
-
-# ------------------------------------------------------------------ PRESTIGIO
-func clovers_total_for(earned: float) -> float:
-	return floor(3.0 * sqrt(earned / 1e6))
-
-func clovers_claimable() -> float:
-	return max(0.0, clovers_total_for(all_earned) - clovers - clovers_spent)
-
-func prestige() -> void:
-	var gain := clovers_claimable()
-	clovers += gain
-	stats["prestiges"] += 1
-	money = start_money_for(tal("cornetto"))
-	run_earned = 0.0
-	_reset_run_arrays()
-	upgrades_bought.clear()
-	frenzy_time = 0.0
-	luckboost_time = 0.0
-	stake_mult = 1.0
-	_cache_t = 0.0
-	check_achievements()
-	save_game()
-	state_reset.emit()
 
 # ------------------------------------------------------------------ SALVATAGGIO
 func save_game() -> void:
@@ -693,7 +929,10 @@ func save_game() -> void:
 		"money": money, "run_earned": run_earned, "all_earned": all_earned,
 		"owned": owned, "managers": managers, "progress": progress, "running": running,
 		"upgrades": upgrades_bought.keys(), "clovers": clovers, "clovers_spent": clovers_spent,
-		"talismans": talismans, "city": city, "debt_paid": debt_paid, "cities_cleared": cities_cleared,
+		"tickets": tickets, "total_tickets": total_tickets_earned,
+		"talismans": talismans, "charms": equipped_charms, "shop": shop_offers,
+		"deadline_idx": deadline_idx, "day_in_deadline": day_in_deadline, "day_time_left": day_time_left,
+		"debt_paid": debt_paid, "cities_cleared": cities_cleared, "best_deadline": best_deadline, "runs_played": runs_played,
 		"stats": stats, "achievements": achievements.keys(), "buy_mode": buy_mode,
 		"sfx": sfx_on, "music": music_on, "intro": intro_seen,
 	}
@@ -713,11 +952,11 @@ func load_game() -> void:
 	var d = JSON.parse_string(f.get_as_text())
 	if typeof(d) != TYPE_DICTIONARY:
 		return
-	money = d.get("money", 5.0)
+	money = d.get("money", 15.0)
 	run_earned = d.get("run_earned", 0.0)
 	all_earned = d.get("all_earned", 0.0)
 	var o: Array = d.get("owned", [])
-	for i in min(o.size(), owned.size()):
+	for i in mini(o.size(), owned.size()):
 		owned[i] = int(o[i])
 		managers[i] = bool(d.get("managers", [])[i]) if i < d.get("managers", []).size() else false
 		progress[i] = float(d.get("progress", [])[i]) if i < d.get("progress", []).size() else 0.0
@@ -727,10 +966,18 @@ func load_game() -> void:
 		upgrades_bought[k] = true
 	clovers = d.get("clovers", 0.0)
 	clovers_spent = d.get("clovers_spent", 0.0)
+	tickets = int(d.get("tickets", 3))
+	total_tickets_earned = int(d.get("total_tickets", tickets))
 	talismans = d.get("talismans", {})
-	city = int(d.get("city", 0))
+	equipped_charms = d.get("charms", [])
+	shop_offers = d.get("shop", [])
+	deadline_idx = int(d.get("deadline_idx", d.get("city", 0)))
+	day_in_deadline = int(d.get("day_in_deadline", 1))
+	day_time_left = float(d.get("day_time_left", day_duration()))
 	debt_paid = d.get("debt_paid", 0.0)
 	cities_cleared = int(d.get("cities_cleared", 0))
+	best_deadline = int(d.get("best_deadline", cities_cleared))
+	runs_played = int(d.get("runs_played", 1))
 	var st: Dictionary = d.get("stats", {})
 	for k in st:
 		stats[k] = st[k]
@@ -741,11 +988,9 @@ func load_game() -> void:
 	sfx_on = d.get("sfx", true)
 	music_on = d.get("music", true)
 	intro_seen = d.get("intro", false)
-	# guadagni offline
-	var elapsed: float = clamp(Time.get_unix_time_from_system() - float(d.get("time", 0)), 0.0, 86400.0)
+	var elapsed: float = clampf(Time.get_unix_time_from_system() - float(d.get("time", 0)), 0.0, 86400.0)
 	if elapsed > 30:
-		var eff := 0.5 + 0.1 * tal("salvadanaio")
-		var v := income_per_sec(true) * elapsed * eff
+		var v := income_per_sec(true) * elapsed * 0.5
 		if v > 0:
 			earn(v)
 			offline_report = v
@@ -760,9 +1005,9 @@ const SUFFIX := ["", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc
 
 func num(v: float) -> String:
 	if is_nan(v) or is_inf(v):
-		return "∞"
+		return "MAX"
 	var neg := v < 0
-	v = abs(v)
+	v = absf(v)
 	var s := ""
 	if v < 1000.0:
 		if v < 10.0 and v != floor(v):

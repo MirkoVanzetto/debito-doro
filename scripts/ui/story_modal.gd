@@ -15,6 +15,12 @@ func _ready() -> void:
 	btn.pressed.connect(_next)
 	resized.connect(_layout)
 
+func _eff_size() -> Vector2:
+	if size.x > 100 and size.y > 100:
+		return size
+	var vp := get_viewport_rect().size
+	return vp if vp.x > 100 else Vector2(1280, 720)
+
 func show_modal(title: String, body: String, button := "OK") -> void:
 	_queue.append([title, body, button])
 	if not visible:
@@ -34,29 +40,35 @@ func _next() -> void:
 	queue_redraw()
 
 func _layout() -> void:
-	var c := size * 0.5
-	btn.position = c + Vector2(-130, 128)
-	btn.size = Vector2(260, 56)
+	var c := _eff_size() * 0.5
+	if btn:
+		btn.position = c + Vector2(-140, 140)
+		btn.size = Vector2(280, 56)
+
+func _process(_d: float) -> void:
+	if visible:
+		_layout()
+		queue_redraw()
 
 func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, size), Color(0, 0, 0, 0.72))
-	var c := size * 0.5
-	var r := Rect2(c - Vector2(300, 210), Vector2(600, 420))
-	draw_set_transform(c, -0.015)
-	S.draw_card(self, Rect2(-300, -210, 600, 420), S.PAPER, 18, Vector2(10, 14), 4)
+	var sz := _eff_size()
+	draw_rect(Rect2(Vector2.ZERO, sz), Color(0, 0, 0, 0.76))
+	var c := sz * 0.5
+	var r := Rect2(c - Vector2(320, 225), Vector2(640, 450))
+	draw_set_transform(c, -0.012)
+	S.draw_card(self, Rect2(-320, -225, 640, 450), S.PAPER, 18, Vector2(10, 14), 4)
 	draw_set_transform(Vector2.ZERO)
 	S.draw_shark(self, Vector2(r.position.x + 68, r.position.y + 62), 78)
-	S.text(self, Vector2(r.position.x + 124, r.position.y + 72), _title, 36, S.RED, 0, S.f_title, 4, S.INK)
+	S.text(self, Vector2(r.position.x + 124, r.position.y + 72), _title, 34, S.RED, 0, S.f_title, 4, S.INK, r.size.x - 145)
 	draw_line(r.position + Vector2(30, 108), Vector2(r.end.x - 30, r.position.y + 108), Color(S.INK, 0.25), 2)
-	# testo multilinea
-	var y := r.position.y + 142
+	var y := r.position.y + 138
 	for para in _body.split("\n"):
 		if para == "":
-			y += 14
+			y += 12
 			continue
 		for line in _wrap(para, r.size.x - 68, 17):
 			S.text(self, Vector2(r.position.x + 34, y), line, 17, S.INK, 0, S.f_body)
-			y += 24
+			y += 23
 
 func _wrap(s: String, max_w: float, sz: int) -> Array:
 	var out := []

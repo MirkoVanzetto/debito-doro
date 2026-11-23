@@ -75,7 +75,7 @@ func _draw() -> void:
 	S.draw_card(self, top, S.PAPER, 16, Vector2(6, 7))
 	S.text(self, Vector2(40, 44), "BACHECA DEI TROFEI  (%d/%d = x%.2f a tutto)" % [G.achievements.size(), G.ACHIEVEMENTS.size(), G.achievement_mult()], 24, S.INK, 0, S.f_title)
 	var st := G.stats
-	var line1 := "Guadagnato totale: %s   |   Vincita max: %s   |   Squali ripagati: %d   |   Fughe: %d" % [G.fmt(G.all_earned), G.fmt(st["biggest_win"]), G.cities_cleared, int(st["prestiges"])]
-	var line2 := "Biglietti: %d   |   Giri slot: %d   |   Dadi: %d   |   Jackpot: %d   |   Gatti: %d   |   Record raddoppio: x%d" % [int(st["scratch"]), int(st["spins"]), int(st["rolls"]), int(st["jackpots"]), int(st["cats"]), int(st["best_double"])]
+	var line1 := "Guadagnato totale: %s   |   Vincita max: %s   |   Scadenze superate: %d (Record: #%d)   |   Run: %d" % [G.fmt(G.all_earned), G.fmt(st["biggest_win"]), G.cities_cleared, G.best_deadline, G.runs_played]
+	var line2 := "Biglietti: %d   |   Slot: %d   |   Dadi: %d   |   Ruota: %d   |   Gatti: %d   |   Record raddoppio: x%d" % [int(st["scratch"]), int(st["spins"]), int(st["rolls"]), int(st.get("wheels", 0)), int(st["cats"]), int(st["best_double"])]
 	S.text(self, Vector2(40, 78), line1, 15, S.INK, 0, S.f_num)
 	S.text(self, Vector2(40, 106), line2, 14, Color(S.INK, 0.75), 0, S.f_body)
