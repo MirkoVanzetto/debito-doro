@@ -17,25 +17,25 @@ var save_path := "user://save.json"
 # ------------------------------------------------------------------ DATI ATTIVITÀ
 const BUSINESSES := [
 	{"name": "Edicola Gratta&Vinci", "desc": "I pensionati grattano, tu incassi.", "icon": "ticket", "color": Color("f2b632"),
-	 "cost": 4.0, "coef": 1.07, "rev": 1.5, "time": 0.6, "mgr": 250.0},
+	 "cost": 4.0, "coef": 1.11, "rev": 1.2, "time": 1.0, "mgr": 300.0},
 	{"name": "Slot del Bar Sport", "desc": "Una macchinetta vicino al flipper.", "icon": "slot", "color": Color("d6344a"),
-	 "cost": 60.0, "coef": 1.15, "rev": 90.0, "time": 2.4, "mgr": 2500.0},
+	 "cost": 60.0, "coef": 1.15, "rev": 55.0, "time": 3.0, "mgr": 3000.0},
 	{"name": "Sala Bingo", "desc": "Nonne agguerrite, cartelle infinite.", "icon": "bingo", "color": Color("3a6fd8"),
-	 "cost": 720.0, "coef": 1.14, "rev": 800.0, "time": 4.5, "mgr": 25000.0},
+	 "cost": 720.0, "coef": 1.14, "rev": 540.0, "time": 6.0, "mgr": 28000.0},
 	{"name": "Agenzia Ippica", "desc": "Cavalli, fantini e soffiate.", "icon": "horse", "color": Color("8a5a3c"),
-	 "cost": 8640.0, "coef": 1.13, "rev": 6500.0, "time": 9.0, "mgr": 150000.0},
+	 "cost": 8640.0, "coef": 1.13, "rev": 4800.0, "time": 11.0, "mgr": 160000.0},
 	{"name": "Poker Clandestino", "desc": "Retrobottega, fumo e bluff.", "icon": "cards", "color": Color("2bb3a3"),
-	 "cost": 103680.0, "coef": 1.12, "rev": 75000.0, "time": 18.0, "mgr": 800000.0},
+	 "cost": 103680.0, "coef": 1.12, "rev": 55000.0, "time": 22.0, "mgr": 900000.0},
 	{"name": "Roulette Truccata", "desc": "Il banco vince. Il banco sei tu.", "icon": "roulette", "color": Color("1b1420"),
-	 "cost": 1.24416e6, "coef": 1.11, "rev": 900000.0, "time": 48.0, "mgr": 6e6},
+	 "cost": 1.24416e6, "coef": 1.11, "rev": 650000.0, "time": 54.0, "mgr": 6e6},
 	{"name": "Lotteria Nazionale", "desc": "Un'intera nazione che sogna.", "icon": "lottery", "color": Color("ff6fae"),
-	 "cost": 1.492992e7, "coef": 1.10, "rev": 1.1e7, "time": 144.0, "mgr": 6e7},
+	 "cost": 1.492992e7, "coef": 1.10, "rev": 8.0e6, "time": 160.0, "mgr": 6e7},
 	{"name": "Casinò Galleggiante", "desc": "In acque internazionali, niente tasse.", "icon": "ship", "color": Color("f07f2e"),
-	 "cost": 1.7915904e8, "coef": 1.09, "rev": 1.3e8, "time": 480.0, "mgr": 4e8},
+	 "cost": 1.7915904e8, "coef": 1.09, "rev": 9.5e7, "time": 520.0, "mgr": 4e8},
 	{"name": "Crypto-Casinò", "desc": "Scommesse sulla blockchain. Fidati.", "icon": "crypto", "color": Color("8a4fd1"),
-	 "cost": 2.14990848e9, "coef": 1.08, "rev": 1.6e9, "time": 1600.0, "mgr": 5e9},
+	 "cost": 2.14990848e9, "coef": 1.08, "rev": 1.2e9, "time": 1800.0, "mgr": 5e9},
 	{"name": "Casinò Lunare", "desc": "Gravità bassa, puntate altissime.", "icon": "moon", "color": Color("5ac35a"),
-	 "cost": 2.579890176e10, "coef": 1.07, "rev": 4.2e10, "time": 6400.0, "mgr": 5e10},
+	 "cost": 2.579890176e10, "coef": 1.07, "rev": 3.2e10, "time": 7200.0, "mgr": 5e10},
 ]
 
 const MANAGERS := [
@@ -53,14 +53,14 @@ const MANAGERS := [
 
 # Scadenze (Deadlines) della run: ogni scadenza ha tot giorni e una quota da versare
 const DEADLINES := [
-	{"name": "Napoli — Il Pizzo", "boss": "Zio Tano 'o Squalo", "quota": 2500.0, "days": 3},
-	{"name": "Napoli — Gli Interessi", "boss": "Zio Tano 'o Squalo", "quota": 35000.0, "days": 3},
-	{"name": "Montecarlo — Il Tavolo VIP", "boss": "Le Requin", "quota": 500000.0, "days": 3},
-	{"name": "Las Vegas — La Strip", "boss": "Big Shark Tony", "quota": 1.0e7, "days": 3},
-	{"name": "Macao — La Triade", "boss": "Madame Shā", "quota": 2.5e8, "days": 4},
-	{"name": "Dubai — Il Grattacielo", "boss": "Lo Sceicco Pinna", "quota": 8.0e9, "days": 4},
-	{"name": "Base Lunare — Il Cratere", "boss": "Lo Squalo Spaziale", "quota": 3.0e11, "days": 4},
-	{"name": "Marte — Il Casinò Rosso", "boss": "Il Megalodonte", "quota": 1.5e13, "days": 4},
+	{"name": "Napoli — Il Pizzo", "boss": "Zio Tano 'o Squalo", "quota": 2000.0, "days": 3},
+	{"name": "Napoli — Gli Interessi", "boss": "Zio Tano 'o Squalo", "quota": 30000.0, "days": 3},
+	{"name": "Montecarlo — Il Tavolo VIP", "boss": "Le Requin", "quota": 450000.0, "days": 3},
+	{"name": "Las Vegas — La Strip", "boss": "Big Shark Tony", "quota": 9.0e6, "days": 3},
+	{"name": "Macao — La Triade", "boss": "Madame Shā", "quota": 2.2e8, "days": 4},
+	{"name": "Dubai — Il Grattacielo", "boss": "Lo Sceicco Pinna", "quota": 7.5e9, "days": 4},
+	{"name": "Base Lunare — Il Cratere", "boss": "Lo Squalo Spaziale", "quota": 2.8e11, "days": 4},
+	{"name": "Marte — Il Casinò Rosso", "boss": "Il Megalodonte", "quota": 1.4e13, "days": 4},
 ]
 
 # Amuleti da vetrinetta (ispirati a CloverPit): si comprano coi Ticket tra una scadenza e l'altra (o in Bottega)
@@ -82,7 +82,7 @@ const CHARMS := [
 	{"id": "teschio", "name": "Teschio del Baro", "rarity": "Epico", "cost": 9, "col": Color("8a4fd1"), "sym": "seven",
 	 "desc": "Raddoppia o Lascia: 35% di salvarti se perdi, e +10% chance!"},
 	{"id": "valigetta", "name": "Valigetta Diplomatica", "rarity": "Raro", "cost": 5, "col": Color("8a5a3c"), "sym": "diamond",
-	 "desc": "+60% Ticket ottenuti dal surplus quando saldi una scadenza."},
+	 "desc": "+60% Ticket dal surplus e niente Taglieggio a fine giorno!"},
 	{"id": "croupier", "name": "Guanto del Croupier", "rarity": "Epico", "cost": 8, "col": Color("ff6fae"), "sym": "horseshoe",
 	 "desc": "Velocità di tutte le attività x2 e Manager -40% costo."},
 	{"id": "limone", "name": "Limone Spremuto", "rarity": "Comune", "cost": 3, "col": Color("ffe14d"), "sym": "lemon",
@@ -96,7 +96,7 @@ const SYNERGY_MILESTONES := [10, 25, 50, 100, 200, 300, 400, 500, 750, 1000]
 
 # Talismani PERMANENTI (sopravvivono alla morte / nuova run, si comprano coi Ticket)
 const TALISMANS := [
-	{"id": "cornetto", "name": "Cornetto Rosso", "desc": "Inizi ogni Run con più soldi e 1 Edicola già attiva.", "base": 2.0, "grow": 2.0, "max": 10},
+	{"id": "cornetto", "name": "Cornetto Rosso", "desc": "Inizi ogni nuova Run con più capitale liquido (attività sempre da 0).", "base": 2.0, "grow": 2.0, "max": 10},
 	{"id": "ferro", "name": "Ferro di Cavallo", "desc": "+2 Fortuna permanente in tutte le Run.", "base": 2.0, "grow": 1.8, "max": 15},
 	{"id": "vetrina", "name": "Vetrinetta Extra", "desc": "+1 slot Amuleto equipaggiabile (fino a 7).", "base": 5.0, "grow": 3.0, "max": 3},
 	{"id": "autogratta", "name": "Grattatore Automatico", "desc": "Gratta biglietti gratis da solo in background.", "base": 4.0, "grow": 2.2, "max": 5},
@@ -208,11 +208,8 @@ func _reset_run_arrays() -> void:
 		owned.append(0); managers.append(false); progress.append(0.0); running.append(false)
 
 func _apply_run_start_bonuses() -> void:
+	_reset_run_arrays()
 	money = start_money_for(tal("cornetto"))
-	owned[0] = 1 + tal("cornetto")
-	if tal("cornetto") >= 2:
-		managers[0] = true
-		running[0] = true
 	day_time_left = day_duration()
 
 # ------------------------------------------------------------------ AMULETI (VETRINETTA)
@@ -293,7 +290,7 @@ func deadline_data() -> Dictionary:
 		base = {
 			"name": "Inferno d'Oro #%d" % extra,
 			"boss": "Il Megalodonte Cosmico",
-			"quota": 1.5e13 * pow(25.0, extra),
+			"quota": 1.4e13 * pow(25.0, extra),
 			"days": 4,
 		}
 	if has_charm("dente_squalo"):
@@ -305,7 +302,7 @@ func city_data() -> Dictionary:
 	return {"name": d["name"], "debt": d["quota"], "boss": d["boss"], "days": d["days"]}
 
 func day_duration() -> float:
-	return 75.0 + 10.0 * tal("orologio") + (25.0 if has_charm("clessidra") else 0.0)
+	return 70.0 + 10.0 * tal("orologio") + (25.0 if has_charm("clessidra") else 0.0)
 
 func debt_left() -> float:
 	return maxf(0.0, float(deadline_data()["quota"]) - debt_paid)
@@ -345,6 +342,7 @@ func _complete_deadline() -> void:
 	deadline_paused = true
 	roll_shop_offers()
 	Sfx.play("jackpot")
+	Sfx.trigger_hype(16.0)
 	check_achievements()
 	save_game()
 	open_deadline_modal.emit(true, {
@@ -361,10 +359,15 @@ func advance_to_next_deadline() -> void:
 	deadline_idx += 1
 	debt_paid = 0.0
 	day_in_deadline = 1
+	run_earned = 0.0
+	_reset_run_arrays()
+	upgrades_bought.clear()
+	money = start_money_for(tal("cornetto")) * pow(2.0, deadline_idx)
 	day_time_left = day_duration()
 	deadline_paused = false
 	_cache_t = 0.0
 	save_game()
+	state_reset.emit()
 
 func _trigger_deadline_timeout() -> void:
 	# Se hai abbastanza soldi in tasca per saldare sulla sirena, lo Squalo se li prende al volo!
@@ -380,9 +383,15 @@ func _trigger_deadline_timeout() -> void:
 		day_in_deadline = next_day
 		day_time_left = day_duration()
 		Sfx.play("lose")
-		toast.emit("FINE GIORNO %d! Lo Squalo bussa alla porta..." % (day_in_deadline - 1), S.RED)
+		# Taglieggio di fine giornata: se tieni contanti non versati, lo Squalo ti tassa il 18%!
+		if money > 2.0 and not has_charm("valigetta"):
+			var tax := money * 0.18
+			money -= tax
+			toast.emit("FINE GIORNO %d! Taglieggio dello Squalo sulla cassa: -%s (-18%%)" % [day_in_deadline - 1, fmt(tax)], S.RED)
+		else:
+			toast.emit("FINE GIORNO %d! Lo Squalo bussa alla porta..." % (day_in_deadline - 1), S.RED)
 	else:
-		# GAME OVER DELLA RUN (stile CloverPit): lo Squalo ti pignora la bisca, ma tieni Ticket & Talismani!
+		# GAME OVER DELLA RUN: lo Squalo ti pignora la bisca, tutti i livelli attività tornano a 0, ma tieni Ticket & Talismani!
 		deadline_paused = true
 		stats["deaths"] = int(stats.get("deaths", 0)) + 1
 		var consolation := maxi(2, 1 + deadline_idx * 2 + int(floor(debt_paid / maxf(1.0, float(dd["quota"])) * 3.0)))
@@ -398,7 +407,7 @@ func _trigger_deadline_timeout() -> void:
 			"tickets": consolation,
 		})
 
-## Nuova Run dopo essere stati stesi dallo Squalo (o fuga volontaria): soft reset con tutti i potenziamenti permanenti!
+## Nuova Run (Soft Reset): AZZERA tutti i livelli delle attività, i manager e le migliorie, ma conserva Ticket e Talismani!
 func start_new_run(keep_charms := false) -> void:
 	runs_played += 1
 	stats["prestiges"] += 1
@@ -419,6 +428,38 @@ func start_new_run(keep_charms := false) -> void:
 	_cache_t = 0.0
 	save_game()
 	state_reset.emit()
+
+## Hard Reset completo (Ricomincia da 0 assoluto): azzera attività, soldi, Ticket, Amuleti, Talismani e Scadenze!
+func full_reset_to_zero() -> void:
+	deadline_idx = 0
+	debt_paid = 0.0
+	day_in_deadline = 1
+	run_earned = 0.0
+	all_earned = 0.0
+	tickets = 0
+	total_tickets_earned = 0
+	clovers = 0.0
+	clovers_spent = 0.0
+	talismans.clear()
+	equipped_charms.clear()
+	upgrades_bought.clear()
+	achievements.clear()
+	cities_cleared = 0
+	best_deadline = 0
+	runs_played = 1
+	stats = {"scratch": 0, "spins": 0, "rolls": 0, "wheels": 0, "jackpots": 0, "cats": 0, "best_double": 0, "prestiges": 0, "biggest_win": 0.0, "play_time": 0.0, "deaths": 0}
+	frenzy_time = 0.0
+	luckboost_time = 0.0
+	stake_mult = 1.0
+	_reset_run_arrays()
+	money = 8.0
+	day_time_left = day_duration()
+	deadline_paused = false
+	roll_shop_offers()
+	_cache_t = 0.0
+	save_game()
+	state_reset.emit()
+	toast.emit("Partita resettata da ZERO assoluto! Buona fortuna!", S.GOLD)
 
 # ------------------------------------------------------------------ UPGRADES
 func _build_upgrades() -> void:
@@ -532,7 +573,7 @@ func buy_talisman(id: String) -> bool:
 
 func tal_effect_text(id: String, lvl: int) -> String:
 	match id:
-		"cornetto": return "Start: %s + %d Edicole" % [fmt(start_money_for(lvl)), 1 + lvl]
+		"cornetto": return "Capitale iniziale: %s (attività da 0)" % fmt(start_money_for(lvl))
 		"ferro": return "Fortuna +%d" % (lvl * 2)
 		"vetrina": return "%d slot Amuleti" % (4 + lvl)
 		"autogratta": return "Off" if lvl == 0 else "1 biglietto ogni %.1fs" % auto_interval(lvl)
@@ -544,7 +585,7 @@ func tal_effect_text(id: String, lvl: int) -> String:
 	return ""
 
 func start_money_for(lvl: int) -> float:
-	return 15.0 if lvl == 0 else 50.0 * pow(4.0, lvl)
+	return 8.0 if lvl == 0 else 25.0 * pow(2.5, lvl)
 
 func auto_interval(lvl: int) -> float:
 	return 3.5 / (1.0 + 0.6 * (lvl - 1))
@@ -891,6 +932,8 @@ func double_chance() -> float:
 func register_win(win: float, st: float, label := "") -> void:
 	if win > stats["biggest_win"]:
 		stats["biggest_win"] = win
+	if win >= st * 10.0:
+		Sfx.trigger_hype(14.0)
 	if win >= st * 50.0:
 		big_win.emit(win, label)
 

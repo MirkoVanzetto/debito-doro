@@ -139,6 +139,8 @@ func _handle_win(win: float, st: float, mult: float, title := "") -> void:
 	pending_win = win
 	pending_stake = st
 	double_streak = 0
+	if mult >= 10:
+		Sfx.trigger_hype(14.0)
 	if mult >= 50:
 		Sfx.play("jackpot")
 		fx.banner(title if title != "" else "JACKPOT!", "+" + G.fmt(win), S.GOLD)

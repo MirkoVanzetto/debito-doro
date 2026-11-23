@@ -56,7 +56,9 @@ func _on_reset() -> void:
 		_confirm = true
 		reset_btn.text = "SICURO? CLICCA ANCORA"
 		return
-	G.hard_reset()
+	_confirm = false
+	reset_btn.text = "RICOMINCIA DA 0"
+	G.full_reset_to_zero()
 
 func _layout() -> void:
 	sfx_btn.position = Vector2(size.x - 450, 20); sfx_btn.size = Vector2(110, 36)
