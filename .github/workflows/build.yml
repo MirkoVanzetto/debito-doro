@@ -1,0 +1,42 @@
+name: Build Windows EXE
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Godot 4.3
+        run: |
+          curl -sSL -o godot.zip https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_linux.x86_64.zip
+          unzip -q godot.zip
+          chmod +x Godot_v4.3-stable_linux.x86_64
+          curl -sSL -o tpl.tpz https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_export_templates.tpz
+          mkdir -p ~/.local/share/godot/export_templates/4.3.stable
+          unzip -q tpl.tpz -d tpl
+          mv tpl/templates/windows_* tpl/templates/version.txt ~/.local/share/godot/export_templates/4.3.stable/
+      - name: Export Windows EXE
+        run: |
+          mkdir -p build
+          ./Godot_v4.3-stable_linux.x86_64 --headless --export-release "Windows Desktop" build/DebitoDOro.exe
+          cd build && zip -9 DebitoDOro-Windows.zip DebitoDOro.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DebitoDOro-Windows
+          path: |
+            build/DebitoDOro.exe
+            build/DebitoDOro-Windows.zip
+      - name: Upload to Release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view "${GITHUB_REF_NAME}" || gh release create "${GITHUB_REF_NAME}" --generate-notes
+          gh release upload "${GITHUB_REF_NAME}" build/DebitoDOro.exe build/DebitoDOro-Windows.zip --clobber
